@@ -34,7 +34,6 @@ resource "libvirt_volume" "vm_disk" {
   pool           = var.storage_pool
   format         = "qcow2"
 }
-
 resource "libvirt_network" "kube_network" {
   name      = "kube_network"
   mode      = "nat"
@@ -42,12 +41,15 @@ resource "libvirt_network" "kube_network" {
   addresses = ["10.17.3.0/24"]
 
   dhcp {
-    range {
-      start = "10.17.3.2"
-      end   = "10.17.3.254"
-    }
+    ranges = [
+      {
+        start = "10.17.3.2"
+        end   = "10.17.3.254"
+      }
+    ]
   }
 }
+
 
 
 data "ct_config" "vm_ignitions" {
