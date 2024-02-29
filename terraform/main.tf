@@ -52,6 +52,7 @@ resource "libvirt_network" "kube_network" {
 
 
 
+
 data "ct_config" "vm_ignitions" {
   for_each = toset(var.machines)
   content = templatefile("${path.module}/../configs/${each.key}-config.yaml.tmpl", {
