@@ -36,14 +36,13 @@ resource "libvirt_volume" "vm_disk" {
 }
 
 resource "libvirt_network" "kube_network" {
-  name      = "var.network_name"
+  name      = "kube_network"
   mode      = "nat"
   domain    = "k8s.local"
   addresses = ["10.17.3.0/24"]
 
   dhcp {
-    enabled = true
-    ranges {
+    range {
       start = "10.17.3.2"
       end   = "10.17.3.254"
     }
