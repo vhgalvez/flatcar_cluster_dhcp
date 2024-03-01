@@ -29,22 +29,24 @@ resource "libvirt_volume" "base" {
 
 resource "libvirt_volume" "vm_disk" {
   for_each       = toset(var.machines)
-  name           = "${each.key}-disk.qcow2"
+  name           = "${var.cluster_name}-${each.key}-disk.qcow2"
   base_volume_id = libvirt_volume.base.id
   pool           = var.storage_pool
   format         = "qcow2"
 }
 
 resource "libvirt_network" "kube_network" {
-  name      = var.network_name
+  name      = "k8s-network"
   mode      = "nat"
-  domain    = var.cluster_domain
+  domain    = "k8s.local"
   addresses = ["10.17.3.0/24"]
 
   dhcp {
     enabled = true
-    start   = "10.17.3.2"
-    end     = "10.17.3.254"
+    range {
+      start = "10.17.3.2"
+      end   = "10.17.3.254"
+    }
   }
 }
 
@@ -53,20 +55,20 @@ data "ct_config" "vm_ignitions" {
   content = templatefile("${path.module}/configs/${each.key}-config.yaml.tmpl", {
     ssh_keys  = var.ssh_keys,
     name      = each.key,
-    hostname  = "${each.key}.${var.cluster_domain}"
+    hostname  = "${each.key}.${var.cluster_name}.${var.cluster_domain}"
   })
 }
 
 resource "libvirt_ignition" "ignition" {
   for_each = data.ct_config.vm_ignitions
-  name     = "${each.key}-ignition"
+  name     = "${var.cluster_name}-${each.key}-ignition"
   pool     = var.storage_pool
   content  = each.value.rendered
 }
 
 resource "libvirt_domain" "machine" {
   for_each = toset(var.machines)
-  name     = "${each.key}"
+  name     = "${var.cluster_name}-${each.key}"
   vcpu     = var.virtual_cpus
   memory   = var.virtual_memory
 
@@ -77,18 +79,12 @@ resource "libvirt_domain" "machine" {
   }
 
   network_interface {
-    network_id   = libvirt_network.kube_network.id
-    wait_for_lease = true
+    network_id = libvirt_network.kube_network.id
   }
 
   graphics {
     type        = "vnc"
     listen_type = "address"
+    autoport    = true
   }
-}
-
-resource "local_file" "flatcar_ignition" {
-  for_each = data.ct_config.vm_ignitions
-  content  = each.value.rendered
-  filename = "${path.module}/outputs/${each.key}.ign"
 }
