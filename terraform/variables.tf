@@ -1,4 +1,3 @@
-# terraform\variables.tf
 variable "cluster_name" {
   description = "Nombre del cluster o entorno"
   type        = string
@@ -28,15 +27,18 @@ variable "virtual_memory" {
   description = "Cantidad de memoria (en MB) para asignar a cada VM"
   type        = number
 }
+
 variable "network_name" {
+  description = "Nombre de la red libvirt utilizada por las instancias Flatcar"
   type        = string
-  description = "Libvirt network used by Flatcar instances"
 }
+
 variable "cluster_domain" {
-  description = "The domain name for the cluster."
+  description = "El nombre de dominio para el cluster."
   type        = string
 }
+
 variable "storage_pool" {
-  description = "The storage pool to use for the VM disks."
+  description = "El grupo de almacenamiento a utilizar para los discos de las VM."
   type        = string
 }

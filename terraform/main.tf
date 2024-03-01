@@ -34,8 +34,9 @@ resource "libvirt_volume" "vm_disk" {
   pool           = var.storage_pool
   format         = "qcow2"
 }
+
 resource "libvirt_network" "kube_network" {
-  name      = "k8s-network"
+  name      = var.network_name
   mode      = "nat"
   domain    = "k8s.local"
   addresses = ["10.17.3.0/24"]
@@ -49,14 +50,12 @@ resource "libvirt_network" "kube_network" {
   }
 }
 
-
-
 data "ct_config" "vm_ignitions" {
   for_each = toset(var.machines)
-  content = templatefile("${path.module}/configs/${each.key}-config.yaml.tmpl", {
-    ssh_keys = var.ssh_keys,
-    name     = each.key,
-    hostname = "${each.key}.${var.cluster_name}.${var.cluster_domain}"
+  content  = templatefile("${path.module}/configs/${each.key}-config.yaml.tmpl", {
+    ssh_keys  = var.ssh_keys,
+    name      = each.key,
+    hostname  = "${each.key}.${var.cluster_name}.${var.cluster_domain}"
   })
 }
 
@@ -81,6 +80,7 @@ resource "libvirt_domain" "machine" {
 
   network_interface {
     network_id = libvirt_network.kube_network.id
+    wait_for_lease = true
   }
 
   graphics {
