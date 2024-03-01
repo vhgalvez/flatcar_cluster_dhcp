@@ -1,4 +1,3 @@
-# main.tf
 terraform {
   required_version = ">= 0.13.0"
   required_providers {
@@ -30,52 +29,47 @@ resource "libvirt_volume" "base" {
 
 resource "libvirt_volume" "vm_disk" {
   for_each       = toset(var.machines)
-  name           = "${var.cluster_name}-${each.key}-disk.qcow2"
+  name           = "${each.key}-disk.qcow2"
   base_volume_id = libvirt_volume.base.id
   pool           = var.storage_pool
   format         = "qcow2"
 }
+
 resource "libvirt_network" "kube_network" {
-  name      = "k8snet"
+  name      = var.network_name
   mode      = "nat"
-  domain    = "k8s.local"
+  domain    = var.cluster_domain
   addresses = ["10.17.3.0/24"]
-  dns {
-    enabled    = true
-    local_only = true
-  }
+
   dhcp {
     enabled = true
-    ranges {
-      start = "10.17.3.2"
-      end   = "10.17.3.254"
-    }
+    start   = "10.17.3.2"
+    end     = "10.17.3.254"
   }
 }
 
 data "ct_config" "vm_ignitions" {
   for_each = toset(var.machines)
-  content = templatefile("${path.module}/../configs/${each.key}-config.yaml.tmpl", {
+  content = templatefile("${path.module}/configs/${each.key}-config.yaml.tmpl", {
     ssh_keys  = var.ssh_keys,
     name      = each.key,
-    message   = "Custom message here"
-    host_name = "${each.key}.${var.cluster_name}.${var.cluster_domain}"
+    hostname  = "${each.key}.${var.cluster_domain}"
   })
 }
+
 resource "libvirt_ignition" "ignition" {
-  for_each = data.ct_config.vm-ignitions
-  name     = "${var.cluster_name}-${each.key}-ignition"
+  for_each = data.ct_config.vm_ignitions
+  name     = "${each.key}-ignition"
   pool     = var.storage_pool
   content  = each.value.rendered
 }
 
-
 resource "libvirt_domain" "machine" {
-  for_each        = toset(var.machines)
-  name            = "${var.cluster_name}-${each.key}"
-  vcpu            = var.virtual_cpus
-  memory          = var.virtual_memory
-  fw_cfg_name     = "opt/org.flatcar-linux/config"
+  for_each = toset(var.machines)
+  name     = "${each.key}"
+  vcpu     = var.virtual_cpus
+  memory   = var.virtual_memory
+
   coreos_ignition = libvirt_ignition.ignition[each.key].id
 
   disk {
@@ -83,7 +77,7 @@ resource "libvirt_domain" "machine" {
   }
 
   network_interface {
-    network_name   = var.network_name
+    network_id   = libvirt_network.kube_network.id
     wait_for_lease = true
   }
 
@@ -92,6 +86,7 @@ resource "libvirt_domain" "machine" {
     listen_type = "address"
   }
 }
+
 resource "local_file" "flatcar_ignition" {
   for_each = data.ct_config.vm_ignitions
   content  = each.value.rendered
