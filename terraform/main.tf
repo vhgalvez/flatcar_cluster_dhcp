@@ -57,13 +57,13 @@ data "ct_config" "vm_ignitions" {
     host_name = "${each.key}.${var.cluster_name}.${var.cluster_domain}"
   })
 }
-
 resource "libvirt_ignition" "ignition" {
-  for_each = data.ct_config.vm_ignitions
+  for_each = data.ct_config.vm-ignitions
   name     = "${var.cluster_name}-${each.key}-ignition"
   pool     = var.storage_pool
   content  = each.value.rendered
 }
+
 
 resource "libvirt_domain" "machine" {
   for_each        = toset(var.machines)
