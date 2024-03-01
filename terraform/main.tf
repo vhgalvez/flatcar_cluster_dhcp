@@ -42,13 +42,13 @@ resource "libvirt_network" "kube_network" {
 
   dhcp {
     enabled = true
-    // Corrección aquí: usar un sub-bloque para "range" dentro de "dhcp"
-    range {
+    ranges {
       start = "10.17.3.2"
       end   = "10.17.3.254"
     }
   }
 }
+
 
 
 data "ct_config" "vm_ignitions" {
