@@ -41,12 +41,8 @@ resource "libvirt_network" "kube_network" {
   addresses = ["10.17.3.0/24"]
 
   dhcp {
-    ranges = [
-      {
-        start = "10.17.3.2"
-        end   = "10.17.3.254"
-      }
-    ]
+    start = "10.17.3.2"
+    end   = "10.17.3.254"
   }
 }
 
