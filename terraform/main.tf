@@ -1,3 +1,4 @@
+# main.tf
 terraform {
   required_version = ">= 0.13.0"
   required_providers {
@@ -36,19 +37,17 @@ resource "libvirt_volume" "vm_disk" {
 }
 
 resource "libvirt_network" "kube_network" {
-  name      = "k8s-network"
+  name      = "k8snet"
   mode      = "nat"
   domain    = "k8s.local"
   addresses = ["10.17.3.0/24"]
-
+  dns {
+    enabled    = true
+    local_only = true
+  }
   dhcp {
     enabled = true
-    range {
-      start = "10.17.3.2"
-      end   = "10.17.3.254"
-    }
   }
-}
 
 data "ct_config" "vm_ignitions" {
   for_each = toset(var.machines)
