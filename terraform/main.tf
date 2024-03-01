@@ -1,3 +1,4 @@
+# main.tf
 terraform {
   required_version = ">= 0.13.0"
   required_providers {
@@ -87,7 +88,6 @@ resource "libvirt_domain" "machine" {
     listen_type = "address"
   }
 }
-
 resource "local_file" "flatcar_ignition" {
   for_each = data.ct_config.vm_ignitions
   content  = each.value.rendered
