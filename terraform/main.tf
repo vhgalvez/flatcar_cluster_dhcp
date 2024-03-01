@@ -34,7 +34,6 @@ resource "libvirt_volume" "vm_disk" {
   pool           = var.storage_pool
   format         = "qcow2"
 }
-
 resource "libvirt_network" "kube_network" {
   name      = "k8s-network"
   mode      = "nat"
@@ -43,6 +42,7 @@ resource "libvirt_network" "kube_network" {
 
   dhcp {
     enabled = true
+    // Corrección aquí: usar un sub-bloque para "range" dentro de "dhcp"
     range {
       start = "10.17.3.2"
       end   = "10.17.3.254"
@@ -50,12 +50,13 @@ resource "libvirt_network" "kube_network" {
   }
 }
 
+
 data "ct_config" "vm_ignitions" {
   for_each = toset(var.machines)
   content = templatefile("${path.module}/configs/${each.key}-config.yaml.tmpl", {
-    ssh_keys  = var.ssh_keys,
-    name      = each.key,
-    hostname  = "${each.key}.${var.cluster_name}.${var.cluster_domain}"
+    ssh_keys = var.ssh_keys,
+    name     = each.key,
+    hostname = "${each.key}.${var.cluster_name}.${var.cluster_domain}"
   })
 }
 
