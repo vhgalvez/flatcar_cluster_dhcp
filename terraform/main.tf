@@ -41,12 +41,12 @@ resource "libvirt_network" "kube_network" {
   addresses = ["10.17.3.0/24"]
 
   dhcp {
-    start = "10.17.3.2"
-    end   = "10.17.3.254"
+    ranges {
+      start = "10.17.3.2"
+      end   = "10.17.3.254"
+    }
   }
 }
-
-
 
 data "ct_config" "vm_ignitions" {
   for_each = toset(var.machines)
